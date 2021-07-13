@@ -6,7 +6,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 
-def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30):
+def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30):
     import yaml
     import numpy as np
     import math
@@ -25,16 +25,27 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
     
     casos=pd.read_json(data['url'])
     
+    casos['quantidade_nao_normalizada']=casos.quantidade.values
+    
+    total_infectados=sum(casos.quantidade_nao_normalizada.values)
+    
+    N=8843000-total_infectados
+    
+    casos.quantidade=casos.quantidade/N
+    
+
+    
+    
     
     #casos.data=pd.to_datetime(casos.data)
 
-    total_infectados=sum(casos.quantidade.values)
+   
     
     print(casos[-5:]['data'].values[0])
     data_inicial=casos[-5:]['data'].values[0]
-    infectados=casos[-5:]['quantidade'].values[0]
+    infectados=casos[-5:]['quantidade_nao_normalizada'].values[0]
     
-    N=8843000-total_infectados
+    
     
     I0=infectados
 
@@ -55,13 +66,13 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
 
     start_date=  datetime.strptime( data_inicial, '%d/%m/%Y')
     end_date=  datetime.strptime('Jun 8 2021', '%b %d %Y')
-    prediction_end_date=datetime.strptime('Dec 12 2023', '%b %d %Y')
+    prediction_end_date=datetime.strptime('Jan 30 2023', '%b %d %Y')
 
     tdays=(prediction_end_date-start_date).days
     
     T=tdays
     
-    vaccine_rate=vaccine_rate_1000*N/1000
+    vaccine_rate=vaccine_rate_1000
     I0=I0/N 
     R0=R0/N
 
@@ -69,7 +80,7 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
     
     def vaccine_pulse(vaccine_number,days):
 
-        u=[(vaccine_number/N) for i in range (0,days)]
+        u=[ vaccine_number for i in range(0,days)]
         return u
 
     u=vaccine_pulse(vaccine_rate,tdays)
@@ -111,10 +122,10 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
         V[t+1] = V[t] + dV
 
     date_list = [timedelta(days=x)+start_date for x in range(tdays)]    
-    removidos=[r*N for r in R]    
-    vacinados=[v*N for v in V]        
-    sucetiveis=[s*N for s in S]
-    infectados=[i*N for i in I]
+    removidos=[r for r in R]    
+    vacinados=[v for v in V]        
+    sucetiveis=[s for s in S]
+    infectados=[i for i in I]
     import pandas as pd
     df=pd.DataFrame(columns=['data','infectados','sucetiveis','removidos','vacinados'])
     df['data']=date_list
@@ -124,13 +135,36 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
 
     df['vacinados']=vacinados
     df['infectados_acumulados'] = df['infectados'].cumsum()
+    
     df['vacinados_acumulados'] = df['vacinados'].cumsum()
     casos.data=[ datetime.strptime(d, '%d/%m/%Y') for d in casos.data.values]   
+    casos['infectados_acumulados']=casos.quantidade.cumsum()
+    
+    maximo_quantidade=np.max(casos.infectados_acumulados)
+    
+    print('maximo',maximo_quantidade)
+    
+    df['infectados_acumulados'] =df['infectados_acumulados']+maximo_quantidade
     
     
     casos_anteriores=alt.Chart(casos)\
         .mark_line()\
         .encode(x='data',y='quantidade')\
+        .properties(
+            width=600,
+    title=alt.TitleParams(
+        ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
+        baseline='bottom',
+        orient='bottom',
+        anchor='end',
+        fontWeight='normal',
+        fontSize=10
+    ))
+
+
+    casos_acumulados=alt.Chart(casos)\
+        .mark_line()\
+        .encode(x='data',y='infectados_acumulados')\
         .properties(
             width=600,
     title=alt.TitleParams(
@@ -173,7 +207,7 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
 
     vacinados_acumulados_casos_acumulados=alt.Chart(df)\
         .mark_line()\
-        .encode(x='data',y='vacinados_acumulados',color=alt.value('red'))\
+        .encode(x='data',y='vacinados',color=alt.value('red'))\
         .properties(
             width=600,
     title=alt.TitleParams(
@@ -184,12 +218,13 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
         fontWeight='normal',
         fontSize=10
     ))
-    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,novos_casos_acumulados,vacinados_acumulados_casos_acumulados)
+    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,casos_acumulados+novos_casos_acumulados,vacinados_acumulados_casos_acumulados)
     grafico.save('templates/chart.html')
     
     
     
     return grafico
+
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/')
 def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados):

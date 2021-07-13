@@ -13,3 +13,5 @@ COPY app.py /app
 COPY config.yml /app
 ADD templates /app/templates
 
+CMD  python app.py
+
