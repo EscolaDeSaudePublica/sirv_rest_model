@@ -123,12 +123,68 @@ def SIRV_model(vaccine_rate_1000=1,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,m
     df['removidos']=removidos
 
     df['vacinados']=vacinados
+    df['infectados_acumulados'] = df['infectados'].cumsum()
+    df['vacinados_acumulados'] = df['vacinados'].cumsum()
     casos.data=[ datetime.strptime(d, '%d/%m/%Y') for d in casos.data.values]   
     
     
-    casos_anteriores=alt.Chart(casos).mark_line().encode(x='data',y='quantidade')
-    novos_casos=alt.Chart(df).mark_line().encode(x='data',y='infectados')
-    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos)
+    casos_anteriores=alt.Chart(casos)\
+        .mark_line()\
+        .encode(x='data',y='quantidade')\
+        .properties(
+            width=600,
+    title=alt.TitleParams(
+        ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
+        baseline='bottom',
+        orient='bottom',
+        anchor='end',
+        fontWeight='normal',
+        fontSize=10
+    ))
+
+    novos_casos=alt.Chart(df)\
+        .mark_line()\
+        .encode(x='data',y='infectados',color=alt.value('red'))\
+        .properties(
+            width=600,
+    title=alt.TitleParams(
+        ['','','Projeção dos casos de Covid de acordo com o modelo SIRV.'],
+        baseline='bottom',
+        orient='bottom',
+        anchor='end',
+        fontWeight='normal',
+        fontSize=10
+    ))
+
+
+    novos_casos_acumulados=alt.Chart(df)\
+        .mark_line()\
+        .encode(x='data',y='infectados_acumulados',color=alt.value('red'))\
+        .properties(
+            width=600,
+    title=alt.TitleParams(
+        ['','','Projeção dos casos acumulados de Covid de acordo com o modelo SIRV.'],
+        baseline='bottom',
+        orient='bottom',
+        anchor='end',
+        fontWeight='normal',
+        fontSize=10
+    ))
+
+    vacinados_acumulados_casos_acumulados=alt.Chart(df)\
+        .mark_line()\
+        .encode(x='data',y='vacinados_acumulados',color=alt.value('red'))\
+        .properties(
+            width=600,
+    title=alt.TitleParams(
+        ['','','Projeção dos vacinados acumulados de Covid de acordo com o modelo SIRV.'],
+        baseline='bottom',
+        orient='bottom',
+        anchor='end',
+        fontWeight='normal',
+        fontSize=10
+    ))
+    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,novos_casos_acumulados,vacinados_acumulados_casos_acumulados)
     grafico.save('templates/chart.html')
     
     
@@ -140,4 +196,4 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
    grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao),percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados))
    return render_template('chart.html')
 if __name__ == '__main__':
-   app.run()
+   app.run(host='0.0.0.0', port=5100)
