@@ -19,7 +19,7 @@ Example of use http://localhost:5100/0.7/0.002/0/10/0/ of the service.
 
 
 
-![graficos1](.\sirv_emulator\graficos1.png)
+![graficos1](graficos1.png)
 
 
 
