@@ -6,7 +6,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 
-def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30):
+def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30,speed_factor=0.02):
     import yaml
     import numpy as np
     import math
@@ -101,8 +101,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
             S[t]=0
         
         # Equations of the model
-        dS = (-beta*I[t]*(S[t]/(1+0.2*S[t]))-alpha*u[t]) * dt
-        dI = (beta*I[t]*(S[t]/(1+0.2*S[t])) - gamma*I[t]) * dt
+        dS = (-beta*I[t]*(S[t]/(1+speed_factor*S[t]))-alpha*u[t]) * dt
+        dI = (beta*I[t]*(S[t]/(1+speed_factor*S[t])) - gamma*I[t]) * dt
         dR = (gamma*I[t]) * dt
         dV=alpha*u[t] * dt
         
@@ -226,9 +226,9 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     return grafico
 
 
-@app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/')
-def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados):
-   grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao),percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados))
+@app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/')
+def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor):
+   grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao),percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados),speed_factor=float(speed_factor))
    return render_template('chart.html')
 if __name__ == '__main__':
    app.run(host='0.0.0.0', port=5100)
