@@ -21,7 +21,7 @@ Example of use http://localhost:5100/0.7/0.002/0/10/0/ of the service.
 
 ![graficos1](graficos1.png)
 
-
+Example of vaccine efficacy of 0.5 , Vaccine speed with 0.001 of total population, New population infected with 0.00006 of total population in 30 days. and delay of 0.1: http://localhost:5100/0.5/0.001/0.00006/30/0.1/ 
 
 
 
