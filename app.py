@@ -23,7 +23,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     with open('config.yml') as f:
         data = yaml.load(f, Loader=SafeLoader)
     
-    casos=pd.read_json(data['url'])
+    casos=pd.read_json('dados.txt')
     
     casos['quantidade_nao_normalizada']=casos.quantidade.values
     

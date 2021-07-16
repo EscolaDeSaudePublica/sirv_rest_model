@@ -11,6 +11,7 @@ EXPOSE 5100
 
 COPY app.py /app
 COPY config.yml /app
+COPY dados.txt /app
 ADD templates /app/templates
 
 CMD  python app.py
