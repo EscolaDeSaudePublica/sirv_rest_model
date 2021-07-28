@@ -1,7 +1,7 @@
 
 from flask import Flask, render_template
 from flask_cors import CORS
-
+from altair import *
 
 app = Flask(__name__)
 CORS(app)
@@ -34,7 +34,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     
     total_infectados=sum(casos.quantidade_nao_normalizada.values)
     
-    N=8843000-total_infectados
+    N=9000000-total_infectados
     
     casos.quantidade=casos.quantidade/N
     
@@ -127,10 +127,10 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
         V[t+1] = V[t] + dV
 
     date_list = [timedelta(days=x)+start_date for x in range(tdays)]    
-    removidos=[r for r in R]    
-    vacinados=[v for v in V]        
-    sucetiveis=[s for s in S]
-    infectados=[i for i in I]
+    removidos=[r*N for r in R]    
+    vacinados=[v*N for v in V]        
+    sucetiveis=[s*N for s in S]
+    infectados=[i*N for i in I]
     import pandas as pd
     df=pd.DataFrame(columns=['data','infectados','sucetiveis','removidos','vacinados'])
     df['data']=date_list
@@ -152,9 +152,11 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     df['infectados_acumulados'] =df['infectados_acumulados']+maximo_quantidade
     
     
+
+    
     casos_anteriores=alt.Chart(casos)\
-        .mark_line()\
-        .encode(x='data',y='quantidade')\
+        .mark_line(clip=True)\
+        .encode(x='data',y=Y('quantidade_nao_normalizada',scale=Scale(domain=[0,10000])))\
         .properties(
             width=600,
     title=alt.TitleParams(
@@ -168,8 +170,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
 
 
     casos_acumulados=alt.Chart(casos)\
-        .mark_line()\
-        .encode(x='data',y='infectados_acumulados')\
+        .mark_line(clip=True)\
+        .encode(x='data',y=Y('infectados_acumulados',scale=Scale(domain=[0,4000000])))\
         .properties(
             width=600,
     title=alt.TitleParams(
@@ -182,8 +184,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     ))
 
     novos_casos=alt.Chart(df)\
-        .mark_line()\
-        .encode(x='data',y='infectados',color=alt.value('red'))\
+        .mark_line(clip=True)\
+        .encode(x='data',y=Y('infectados',scale=Scale(domain=[0,10000])),color=alt.value('red'))\
         .properties(
             width=600,
     title=alt.TitleParams(
@@ -197,7 +199,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
 
 
     novos_casos_acumulados=alt.Chart(df)\
-        .mark_line()\
+        .mark_line(clip=True)\
         .encode(x='data',y='infectados_acumulados',color=alt.value('red'))\
         .properties(
             width=600,
