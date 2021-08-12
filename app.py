@@ -2,6 +2,11 @@
 from flask import Flask, render_template
 from flask_cors import CORS
 from altair import *
+from threading import Timer
+from timeloop import Timeloop
+from datetime import timedelta
+import yaml
+from yaml.loader import SafeLoader
 
 app = Flask(__name__)
 CORS(app)
@@ -9,6 +14,24 @@ CORS(app)
 app.jinja_env.auto_reload = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+
+# Open the file and load the file
+
+tl = Timeloop()
+
+@tl.job(interval=timedelta(seconds=10))
+def update_file():  
+    try:
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+        casos=pd.read_json(data['url'])
+        casos=casos[casos.quantidade>0]
+        casos.to_json('dados.txt')
+        print('Dados atualizados')
+    except Exception as ex:
+        print(ex)
+
+tl.start()
 
 
 def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30,speed_factor=0.02):
@@ -24,9 +47,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
 
 
 
-    # Open the file and load the file
-    with open('config.yml') as f:
-        data = yaml.load(f, Loader=SafeLoader)
+    
     
     casos=pd.read_json('dados.txt')
     
@@ -238,4 +259,4 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
    grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao),percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados),speed_factor=float(speed_factor))
    return render_template('chart.html')
 if __name__ == '__main__':
-   app.run(host='0.0.0.0', port=5100)
+   app.run(host='0.0.0.0', port=5100,ssl_context='adhoc')
