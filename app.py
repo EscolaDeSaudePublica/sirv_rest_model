@@ -262,4 +262,5 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
    grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao),percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados),speed_factor=float(speed_factor))
    return render_template('chart.html')
 if __name__ == '__main__':
+   print('Iniciando aplicacao')
    app.run(host='0.0.0.0', port=5100)
