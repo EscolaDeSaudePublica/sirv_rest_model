@@ -1,6 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\research",
+    "\\sirv_emulator",
+    "\\sirv_emulator\\PythonApplication1"
   ],
   "SelectedNode": "\\app.py",
   "PreviewInSolutionExplorer": false
