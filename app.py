@@ -22,8 +22,10 @@ tl = Timeloop()
 @tl.job(interval=timedelta(seconds=10))
 def update_file():  
     try:
+        print('Atualizando dados ')
         with open('config.yml') as f:
             data = yaml.load(f, Loader=SafeLoader)
+        print('Arquivo de configuração carregado')
         casos=pd.read_json(data['url'])
         casos=casos[casos.quantidade>0]
         casos.to_json('dados.txt')
@@ -31,6 +33,7 @@ def update_file():
     except Exception as ex:
         print(ex)
 
+print('Iniciando metodo assincrono')
 tl.start()
 
 
