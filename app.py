@@ -73,7 +73,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     
     print(casos[-5:]['data'].values[0])
     data_inicial=casos[-5:]['data'].values[0]
-    infectados=casos[-5:]['quantidade_nao_normalizada'].values[0]
+    infectados=casos[-15:]['quantidade_nao_normalizada'].values[0]
     
     
     
@@ -209,13 +209,16 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
 
    df=df[(df.data>=start_date_) &  (df.data<=end_date_)]
 
-   df.loc['Total']= df.sum(numeric_only=True, axis=0)
-
+   
    df=df[['data','infectados','óbitos','hospitalizações']]
+   df.columns=['Data','Infectados','Óbitos','Hospitalizações']
 
    df=df.reset_index(drop=True)
-
    df.index+=1 
+
+   df.loc['Total']= df.sum(numeric_only=True, axis=0)
+
+   
 
    print(df)
    
