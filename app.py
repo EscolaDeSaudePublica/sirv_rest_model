@@ -5,8 +5,14 @@ from altair import *
 from threading import Timer
 from timeloop import Timeloop
 from datetime import timedelta
-import yaml
 from yaml.loader import SafeLoader
+import yaml
+import numpy as np
+import math
+import pandas as pd
+from datetime import  datetime
+from datetime import timedelta
+import altair as alt
 
 app = Flask(__name__)
 CORS(app)
@@ -40,17 +46,10 @@ tl.start()
 def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50
                ,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30
                ,speed_factor=0.02,death_factor=0.028,hospitalization_factor=0.1):
-    import yaml
-    import numpy as np
-    import math
-    import pandas as pd
-    from yaml.loader import SafeLoader
-    import pandas as pd
-    from datetime import  datetime
-    from datetime import timedelta
-    import altair as alt
+   
 
 
+    import pandas as pd
 
     
     
@@ -157,8 +156,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     vacinados=[v*N for v in V]        
     sucetiveis=[s*N for s in S]
     infectados=[i*N for i in I]
-    mortos=[i*N*death_factor for i in I]
-    hospitalizacao=[i*N*hospitalization_factor for i in I]
+    mortos=[i*death_factor for i in infectados]
+    hospitalizacao=[i*hospitalization_factor for i in infectados]
 
     import pandas as pd
     df=pd.DataFrame(columns=['data','infectados','sucetiveis','removidos','vacinados'])
@@ -180,128 +179,167 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     print('maximo',maximo_quantidade)
     
     df['infectados_acumulados'] =df['infectados_acumulados']+maximo_quantidade
+
+
+    return df,casos
     
     
 
     
-    casos_anteriores=alt.Chart(casos)\
-        .mark_line(clip=True)\
-        .encode(x='data',y=Y('quantidade_nao_normalizada',scale=Scale(domain=[0,10000])))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-
-    casos_acumulados=alt.Chart(casos)\
-        .mark_line(clip=True)\
-        .encode(x='data',y=Y('infectados_acumulados',scale=Scale(domain=[0,4000000])))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-    novos_casos=alt.Chart(df)\
-        .mark_line(clip=True)\
-        .encode(x='data',y=Y('infectados',scale=Scale(domain=[0,10000])),color=alt.value('red'))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','','Projeção dos casos de Covid de acordo com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-
-    novos_casos_acumulados=alt.Chart(df)\
-        .mark_line(clip=True)\
-        .encode(x='data',y='infectados_acumulados',color=alt.value('red'))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','','Projeção dos casos acumulados de Covid de acordo com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-    vacinados_acumulados_casos_acumulados=alt.Chart(df)\
-        .mark_line()\
-        .encode(x='data',y='vacinados',color=alt.value('red'))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','','Projeção dos vacinados acumulados de Covid de acordo com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-
-    obitos_grafico=alt.Chart(df)\
-        .mark_line()\
-        .encode(x='data',y='óbitos',color=alt.value('red'))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','','Projeção dos óbitos de Covid de acordo com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-
-    hospitalizacoes_grafico=alt.Chart(df)\
-        .mark_line()\
-        .encode(x='data',y='hospitalizações',color=alt.value('red'))\
-        .properties(
-            width=600,
-    title=alt.TitleParams(
-        ['','','Projeção das hospitalizações por Covid de acordo com o modelo SIRV.'],
-        baseline='bottom',
-        orient='bottom',
-        anchor='end',
-        fontWeight='normal',
-        fontSize=10
-    ))
-
-    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,
-                        casos_acumulados+novos_casos_acumulados,
-                        vacinados_acumulados_casos_acumulados,obitos_grafico,hospitalizacoes_grafico)
-    grafico.save('templates/chart.html')
+  
     
+@app.route('/filter_date/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:start_date>/<string:end_date>/')
+def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor,start_date,end_date):
+   df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao)
+                      ,percentual_infectados=float(novos_infectados),
+                      day_interval=int(dias_novos_infectados)
+                      ,speed_factor=float(speed_factor),
+                      death_factor=float(death_factor),
+                      hospitalization_factor=float(hospitalization_factor))
+
+
+   
+   start_date_=datetime.strptime(start_date,'%d-%m-%Y')
+   end_date_=datetime.strptime(end_date,'%d-%m-%Y')
+   print(start_date_)
+   print(end_date_)
+
+  
+  
+
+   df=df[(df.data>=start_date_) &  (df.data<=end_date_)]
+   print(df)
+   
+   html = df.to_html()
+
+   #write html to file
+   text_file = open("templates/filter.html", "w")
+   text_file.write(html)
+   text_file.close()
+   return render_template('filter.html')
     
-    
-    return grafico
 
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
 def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor):
-   grafico=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao)
-                      ,percentual_infectados=float(novos_infectados),day_interval=int(dias_novos_infectados)
-                      ,speed_factor=float(speed_factor),death_factor=float(death_factor),hospitalization_factor=float(hospitalization_factor))
+   df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao)
+                      ,percentual_infectados=float(novos_infectados),
+                      day_interval=int(dias_novos_infectados)
+                      ,speed_factor=float(speed_factor),
+                      death_factor=float(death_factor),
+                      hospitalization_factor=float(hospitalization_factor))
+    
+
+
+   casos_anteriores=alt.Chart(casos)\
+                                    .mark_line(clip=True)\
+                                    .encode(x='data',y=Y('quantidade_nao_normalizada',scale=Scale(domain=[0,10000])))\
+                                    .properties(width=600,title=alt.TitleParams(
+                                    ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
+                                        baseline='bottom',
+                                        orient='bottom',
+                                        anchor='end',
+                                        fontWeight='normal',
+                                        fontSize=10
+                                    ))
+
+
+   casos_acumulados=alt.Chart(casos)\
+            .mark_line(clip=True)\
+            .encode(x='data',y=Y('infectados_acumulados',scale=Scale(domain=[0,4000000])))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+   novos_casos=alt.Chart(df)\
+            .mark_line(clip=True)\
+            .encode(x='data',y=Y('infectados',scale=Scale(domain=[0,10000])),color=alt.value('red'))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','','Projeção dos casos de Covid de acordo com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+
+   novos_casos_acumulados=alt.Chart(df)\
+            .mark_line(clip=True)\
+            .encode(x='data',y='infectados_acumulados',color=alt.value('red'))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','','Projeção dos casos acumulados de Covid de acordo com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+   vacinados_acumulados_casos_acumulados=alt.Chart(df)\
+            .mark_line()\
+            .encode(x='data',y='vacinados',color=alt.value('red'))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','','Projeção dos vacinados acumulados de Covid de acordo com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+
+   obitos_grafico=alt.Chart(df)\
+            .mark_line()\
+            .encode(x='data',y='óbitos',color=alt.value('red'))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','','Projeção dos óbitos de Covid de acordo com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+
+   hospitalizacoes_grafico=alt.Chart(df)\
+            .mark_line()\
+            .encode(x='data',y='hospitalizações',color=alt.value('red'))\
+            .properties(
+                width=600,
+        title=alt.TitleParams(
+            ['','','Projeção das hospitalizações por Covid de acordo com o modelo SIRV.'],
+            baseline='bottom',
+            orient='bottom',
+            anchor='end',
+            fontWeight='normal',
+            fontSize=10
+        ))
+
+   grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,
+                        casos_acumulados+novos_casos_acumulados,
+                        vacinados_acumulados_casos_acumulados,obitos_grafico,hospitalizacoes_grafico)
+   grafico.save('templates/chart.html')
+    
    return render_template('chart.html')
+
+
+
 if __name__ == '__main__':
    print('Iniciando aplicacao')
    app.run(host='0.0.0.0', port=5100)
