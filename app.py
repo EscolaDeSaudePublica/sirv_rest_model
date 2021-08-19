@@ -211,7 +211,11 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
 
    df.loc['Total']= df.sum(numeric_only=True, axis=0)
 
-   df=df[['data','infectados','óbitos','internalizações']]
+   df=df[['data','infectados','óbitos','hospitalizações']]
+
+   df=df.reset_index(drop=True)
+
+   df.index+=1 
 
    print(df)
    
