@@ -199,8 +199,8 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
 
 
    
-   start_date_=datetime.strptime(start_date,'%d-%m-%Y')
-   end_date_=datetime.strptime(end_date,'%d-%m-%Y')
+   start_date_=datetime.strptime(start_date,'%Y-%m-%d')
+   end_date_=datetime.strptime(end_date,'%Y-%m-%d')
    print(start_date_)
    print(end_date_)
 
