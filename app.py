@@ -221,12 +221,37 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
    
 
    print(df)
+
+   total_infectados=df.iloc[-1,:]['Infectados']
+   total_obitos=df.iloc[-1,:]['Óbitos']
+   total_hospitalizacoes=df.iloc[-1,:]['Hospitalizações']
    
    html = df.to_html()
 
    #write html to file
    text_file = open("templates/filter.html", "w")
-   text_file.write(html)
+   text_file.write('<html>')
+   text_file.write("<head><style> table {font-family: arial, sans-serif;")
+   text_file.write("border-collapse: collapse;")
+   text_file.write("width: 100%;")
+   text_file.write("}")
+   text_file.write(" td, th {")
+   text_file.write("border: 1px solid #dddddd;")
+   text_file.write("text-align: left;")
+   text_file.write("padding: 8px;")
+   text_file.write("}")
+   text_file.write("tr:nth-child(even) {")
+   text_file.write("background-color: #dddddd;")
+   text_file.write("}")
+   text_file.write("</style>")
+   text_file.write("</head>")
+   text_file.write("<body>")
+   text_file.write('<table>')
+   text_file.write('<tr><td><b>Infectados:</b></td><td>'+str(total_infectados)+'</b><br/>')
+   text_file.write('<tr><td><b>Óbitos:</b></td><td>'+str(total_obitos)+'</td></tr>')
+   text_file.write('<tr><td><b>Hospitalizações:</b></td><td>'+str(total_hospitalizacoes)+'</td></tr>')
+   text_file.write('</table>')
+   text_file.write('</body>')
    text_file.close()
    return render_template('filter.html')
     
