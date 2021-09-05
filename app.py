@@ -39,6 +39,28 @@ def update_file():
     except Exception as ex:
         print(ex)
 
+
+
+@tl.job(interval=timedelta(seconds=30))
+def update_file_vacinacao():  
+    try:
+        print('Atualizando dados ')
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+        print('Arquivo de configuração carregado')
+        casos=pd.read_json(data['url_vacina'])
+        
+        casos.to_json('dados_vacinacao.txt')
+        print('Dados vacinacao atualizados')
+    except Exception as ex:
+        print(ex)
+
+
+
+
+
+
+
 print('Iniciando metodo assincrono')
 tl.start()
 
@@ -185,7 +207,15 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     
     
 
-    
+
+
+@app.route('/total_vacinados/')
+def total_vacinados():
+    casos=pd.read_json('dados_vacinacao.txt')
+    casos['Total'] = casos.sum(axis=1)
+
+    print(casos)
+    return casos.to_json(orient="records")
   
     
 @app.route('/filter_date/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:start_date>/<string:end_date>/')
@@ -205,9 +235,13 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
    print(end_date_)
 
   
-  
+   print('Antes do filtro de data ') 
+   print(df)
 
    df=df[(df.data>=start_date_) &  (df.data<=end_date_)]
+
+   print('Depois do filtro de data ') 
+   print(df)
 
    
    df=df[['data','infectados','óbitos','hospitalizações']]
@@ -218,42 +252,9 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
 
    df.loc['Total']= df.sum(numeric_only=True, axis=0)
 
-   
-
    print(df)
-
-   total_infectados=df.iloc[-1,:]['Infectados']
-   total_obitos=df.iloc[-1,:]['Óbitos']
-   total_hospitalizacoes=df.iloc[-1,:]['Hospitalizações']
    
-   html = df.to_html()
-
-   #write html to file
-   text_file = open("templates/filter.html", "w")
-   text_file.write('<html>')
-   text_file.write("<head><style> table {font-family: arial, sans-serif;")
-   text_file.write("border-collapse: collapse;")
-   text_file.write("width: 100%;")
-   text_file.write("}")
-   text_file.write(" td, th {")
-   text_file.write("border: 1px solid #dddddd;")
-   text_file.write("text-align: left;")
-   text_file.write("padding: 8px;")
-   text_file.write("}")
-   text_file.write("tr:nth-child(even) {")
-   text_file.write("background-color: #dddddd;")
-   text_file.write("}")
-   text_file.write("</style>")
-   text_file.write("</head>")
-   text_file.write("<body>")
-   text_file.write('<table>')
-   text_file.write('<tr><td><b>Infectados:</b></td><td>'+str(total_infectados)+'</b><br/>')
-   text_file.write('<tr><td><b>Óbitos:</b></td><td>'+str(total_obitos)+'</td></tr>')
-   text_file.write('<tr><td><b>Hospitalizações:</b></td><td>'+str(total_hospitalizacoes)+'</td></tr>')
-   text_file.write('</table>')
-   text_file.write('</body>')
-   text_file.close()
-   return render_template('filter.html')
+   return df.to_json(orient="records")
     
 
 
@@ -271,7 +272,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
    casos_anteriores=alt.Chart(casos)\
                                     .mark_line(clip=True)\
                                     .encode(x='data',y=Y('quantidade_nao_normalizada',scale=Scale(domain=[0,10000])))\
-                                    .properties(width=600,title=alt.TitleParams(
+                                    .properties(width=500,title=alt.TitleParams(
                                     ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
                                         baseline='bottom',
                                         orient='bottom',
@@ -285,7 +286,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line(clip=True)\
             .encode(x='data',y=Y('infectados_acumulados',scale=Scale(domain=[0,4000000])))\
             .properties(
-                width=600,
+                width=500,
         title=alt.TitleParams(
             ['','Gráfico com o Número de infectados por Covid e projeção com o modelo SIRV.'],
             baseline='bottom',
@@ -299,7 +300,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line(clip=True)\
             .encode(x='data',y=Y('infectados',scale=Scale(domain=[0,10000])),color=alt.value('red'))\
             .properties(
-                width=600,
+               width=500,
         title=alt.TitleParams(
             ['','','Projeção dos casos de Covid de acordo com o modelo SIRV.'],
             baseline='bottom',
@@ -314,7 +315,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line(clip=True)\
             .encode(x='data',y='infectados_acumulados',color=alt.value('red'))\
             .properties(
-                width=600,
+                width=500,
         title=alt.TitleParams(
             ['','','Projeção dos casos acumulados de Covid de acordo com o modelo SIRV.'],
             baseline='bottom',
@@ -328,7 +329,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line()\
             .encode(x='data',y='vacinados',color=alt.value('red'))\
             .properties(
-                width=600,
+                width=500,
         title=alt.TitleParams(
             ['','','Projeção dos vacinados acumulados de Covid de acordo com o modelo SIRV.'],
             baseline='bottom',
@@ -343,7 +344,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line()\
             .encode(x='data',y='óbitos',color=alt.value('red'))\
             .properties(
-                width=600,
+                width=500,
         title=alt.TitleParams(
             ['','','Projeção dos óbitos de Covid de acordo com o modelo SIRV.'],
             baseline='bottom',
@@ -358,7 +359,7 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             .mark_line()\
             .encode(x='data',y='hospitalizações',color=alt.value('red'))\
             .properties(
-                width=600,
+                width=500,
         title=alt.TitleParams(
             ['','','Projeção das hospitalizações por Covid de acordo com o modelo SIRV.'],
             baseline='bottom',
@@ -368,10 +369,13 @@ def home(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infect
             fontSize=10
         ))
 
+
+   autosize = alt.AutoSizeParams(contains="content", resize=True, type='fit-x')
+
    grafico=alt.vconcat(casos_anteriores+novos_casos,novos_casos,
                         casos_acumulados+novos_casos_acumulados,
                         vacinados_acumulados_casos_acumulados,obitos_grafico,hospitalizacoes_grafico)
-   grafico.save('templates/chart.html')
+   grafico .save('templates/chart.html')
     
    return render_template('chart.html')
 
