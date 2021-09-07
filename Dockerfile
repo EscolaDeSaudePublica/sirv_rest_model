@@ -13,6 +13,7 @@ EXPOSE 5100
 COPY app.py /app
 COPY config.yml /app
 COPY dados.txt /app
+COPY dados_vacinacao.txt /app
 ADD templates /app/templates
 
 CMD  python app.py
