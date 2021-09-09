@@ -206,7 +206,12 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     return df,casos
     
     
-
+@app.route('/casos/')
+def casos():
+    casos=pd.read_json('dados.txt')
+   
+    print(casos)
+    return casos.to_json(orient="table")
 
 
 @app.route('/total_vacinados/')
@@ -216,6 +221,12 @@ def total_vacinados():
 
     print(casos)
     return casos.to_json(orient="records")
+
+
+@app.route('/populacao_cidades/')
+def populacao_cidades():
+    populacao=pd.read_csv('populacao.csv')
+    return populacao.to_json(orient="records")
   
     
 @app.route('/filter_date/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:start_date>/<string:end_date>/')
@@ -256,6 +267,21 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
    
    return df.to_json(orient="records")
     
+
+
+
+@app.route('/json_model_data/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
+def json_model_data(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor):
+   df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao)
+                      ,percentual_infectados=float(novos_infectados),
+                      day_interval=int(dias_novos_infectados)
+                      ,speed_factor=float(speed_factor),
+                      death_factor=float(death_factor),
+                      hospitalization_factor=float(hospitalization_factor))
+    
+
+    
+   return df.to_json(orient="table")
 
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
