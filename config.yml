@@ -1,4 +1,6 @@
 {
-url: 'https://integrasus.saude.ce.gov.br/api/coronavirus/curva-epidemiologica?dataInicio=2020-01-01&dataFim=2023-07-12&minDate=2020-01-01&maxDate=2023-07-12&tipo=Confirmados&idMunicipio=&idRegiaoSaude=&idMacrorregiao=&casosHospitalizados=false&casosProfissionais=false&casosIndigenas=false&casosEstudante=false',
-url_vacina: 'http://10.17.1.111:8050/get_qtd_vacinados/todos/',
-url_vacina_historico: 'http://10.17.1.111:8050/get_historico_vacinados/'}
+url: 'https://integrasus.saude.ce.gov.br/api/coronavirus/curva-epidemiologica?dataInicio=2020-01-01&dataFim=2025-07-12&minDate=2020-01-01&maxDate=2023-07-12&tipo=Confirmados&idMunicipio=&idRegiaoSaude=&idMacrorregiao=&casosHospitalizados=false&casosProfissionais=false&casosIndigenas=false&casosEstudante=false',
+url_vacina: 'https://api.cisecdev.esp.ce.gov.br/get_qtd_vacinados/todos/',
+url_vacina_historico: 'https://api.cisecdev.esp.ce.gov.br/get_qtd_vacinados_ultimos_15_dias/todos',
+url_integrasus_casos: 'https://integrasus.saude.ce.gov.br/api/coronavirus/qtd-por-municipio?dataInicio=2020-01-01&dataFim=2025-09-11&minDate=2020-01-01&maxDate=2025-09-11&tipo=Confirmados&idMunicipio=&idRegiaoSaude=&idMacrorregiao=&casosHospitalizados=false&casosProfissionais=false&casosIndigenas=false&casosEstudante=false',
+url_municipio_integrasus_casos: 'https://integrasus.saude.ce.gov.br/api/coronavirus/curva-epidemiologica?dataInicio=2020-01-01&dataFim=2025-07-12&minDate=2020-01-01&maxDate=2023-07-12&tipo=Confirmados&idMunicipio=@&idRegiaoSaude=&idMacrorregiao=&casosHospitalizados=false&casosProfissionais=false&casosIndigenas=false&casosEstudante=false',}

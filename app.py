@@ -13,6 +13,8 @@ import pandas as pd
 from datetime import  datetime
 from datetime import timedelta
 import altair as alt
+import unicodedata
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -25,7 +27,7 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 tl = Timeloop()
 
-@tl.job(interval=timedelta(seconds=10))
+@tl.job(interval=timedelta(seconds=600))
 def update_file():  
     try:
         print('Atualizando dados ')
@@ -35,23 +37,105 @@ def update_file():
         casos=pd.read_json(data['url'])
         casos=casos[casos.quantidade>0]
         casos.to_json('dados.txt')
-        print('Dados atualizados')
+       
+    except Exception as ex:
+        print(ex)
+
+
+@tl.job(interval=timedelta(seconds=600))
+def update_integrasus_municipios():  
+    try:
+       
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+      
+        casos=pd.read_json(data['url_integrasus_casos'])
+        casos.to_json('dados_municipios.txt')
+    
+    except Exception as ex:
+        print(ex)
+
+
+@tl.job(interval=timedelta(seconds=600))
+def update_integrasus_municipios_casos():  
+    try:
+       
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+       
+        casos=pd.read_json(data['url_integrasus_casos'])
+        casos.to_json('dados_municipios.txt')
+       
+    except Exception as ex:
+        print(ex)
+
+
+@tl.job(interval=timedelta(seconds=10))
+def update_integrasus_municipios_casos_por_municipio_vacinacao():  
+    try:
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+
+        df=pd.read_csv('new_ibge-X_cidade.csv')
+        print(df)
+        for _,r in df.iterrows():
+            url=data['url_vacina']
+       
+            url_municipio=url.replace('todos',str(r['new_ibge']))
+         
+            casos=pd.read_json(url_municipio)
+
+            nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', r['nome']) 
+    if not unicodedata.combining(ch))
+            nome_municipio = nome_municipio.upper()
+
+            casos.to_json('dados_casos_vacinacao_'+nome_municipio+'.txt')
+
+            time.sleep(10)
+       
+    except Exception as ex:
+        print(ex)
+
+
+@tl.job(interval=timedelta(seconds=600))
+def update_integrasus_municipios_casos_por_municipio():  
+    try:
+        with open('config.yml') as f:
+            data = yaml.load(f, Loader=SafeLoader)
+
+        df=pd.read_json('dados_municipios.txt')
+        for _,r in df.iterrows():
+            url=data['url_municipio_integrasus_casos']
+         
+            url_municipio=url.replace('@',str(int(r['idMunicipio'])))
+           
+            casos=pd.read_json(url_municipio)
+
+            
+            nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', r['municipio']) 
+    if not unicodedata.combining(ch))
+            nome_municipio = nome_municipio.upper()
+
+
+            casos.to_json('dados_casos_'+nome_municipio+'.txt')
+
+            time.sleep(10)
+       
     except Exception as ex:
         print(ex)
 
 
 
-@tl.job(interval=timedelta(seconds=30))
+
+@tl.job(interval=timedelta(seconds=600))
 def update_file_vacinacao():  
     try:
-        print('Atualizando dados ')
         with open('config.yml') as f:
             data = yaml.load(f, Loader=SafeLoader)
-        print('Arquivo de configuração carregado')
         casos=pd.read_json(data['url_vacina'])
         
         casos.to_json('dados_vacinacao.txt')
-        print('Dados vacinacao atualizados')
+       
     except Exception as ex:
         print(ex)
 
@@ -67,15 +151,32 @@ tl.start()
 
 def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50
                ,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30
-               ,speed_factor=0.02,death_factor=0.028,hospitalization_factor=0.1):
+               ,speed_factor=0.02,death_factor=0.028,hospitalization_factor=0.1,municipio='Todos'):
    
 
 
     import pandas as pd
 
     
-    
-    casos=pd.read_json('dados.txt')
+    if municipio=='Todos':
+        casos=pd.read_json('dados.txt')
+    else:
+
+        nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', municipio) 
+    if not unicodedata.combining(ch))
+        nome_municipio = nome_municipio.upper()
+
+        print('dados_casos_'+nome_municipio+'.txt')
+        casos=pd.read_json('dados_casos_'+nome_municipio+'.txt')
+        casos.quantidade=pd.to_numeric(casos.quantidade)
+        now = pd.to_datetime("now")
+        casos['data_date']=pd.to_datetime(casos.data, format='%d/%m/%Y', errors='coerce')
+        print(casos)
+        print(now)
+        casos=casos[casos.data_date<now]
+        
+        print('casos')
+        print(casos)
     
     casos['quantidade_nao_normalizada']=casos.quantidade.values
     
@@ -213,20 +314,52 @@ def casos():
     print(casos)
     return casos.to_json(orient="table")
 
+#process.env.REACT_APP_BASE_URL_ 
 
-@app.route('/total_vacinados/')
-def total_vacinados():
-    casos=pd.read_json('dados_vacinacao.txt')
+@app.route('/casos/<string:municipio>')
+def casos_por_municipio(municipio):
+    try:
+        if municipio=='Todos':
+            casos=pd.read_json('dados.txt')
+        else:
+
+            nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', municipio) 
+    if not unicodedata.combining(ch))
+            nome_municipio = nome_municipio.upper()
+            casos=pd.read_json('dados_casos_'+nome_municipio.upper()+'.txt')
+        print(casos)
+        return casos.to_json(orient="table")
+    except:
+        casos=pd.DataFrame()
+        return casos.to_json(orient="table")
+
+
+@app.route('/total_vacinados/<string:municipio>')
+def total_vacinados(municipio):
+
+   
+    if municipio=='Todos':
+        casos=pd.read_json('dados_vacinacao.txt')
+    
+    else:
+
+        nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', municipio) 
+if not unicodedata.combining(ch))
+        nome_municipio = nome_municipio.upper()
+        casos=pd.read_json('dados_casos_vacinacao_'+nome_municipio.upper()+'.txt')
+   
+    casos=casos.fillna(0)
+    casos=casos.reset_index()
     casos['Total'] = casos.sum(axis=1)
 
     print(casos)
-    return casos.to_json(orient="records")
+    return casos.to_json(orient="table")
 
 
 @app.route('/populacao_cidades/')
 def populacao_cidades():
     populacao=pd.read_csv('populacao.csv')
-    return populacao.to_json(orient="records")
+    return populacao.to_json(orient="table")
   
     
 @app.route('/filter_date/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:start_date>/<string:end_date>/')
@@ -272,8 +405,11 @@ def filter_date(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos
 
 @app.route('/json_model_data/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
 def json_model_data(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor):
-   df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao)
-                      ,percentual_infectados=float(novos_infectados),
+    velocidade_vacinacao_=float(velocidade_vacinacao)/9000000
+    percentual_infectados_=float(novos_infectados)/9000000
+    print('velocidade vacinacao ',velocidade_vacinacao_)
+    df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=velocidade_vacinacao_
+                      ,percentual_infectados=percentual_infectados_,
                       day_interval=int(dias_novos_infectados)
                       ,speed_factor=float(speed_factor),
                       death_factor=float(death_factor),
@@ -281,7 +417,37 @@ def json_model_data(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
     
 
     
-   return df.to_json(orient="table")
+    return df.to_json(orient="table")
+
+
+@app.route('/json_model_data_municipio/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:municipio>/')
+def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor,municipio):
+    
+    try:
+        if municipio=='Todos':
+            print('Municipio igual a todos')
+            velocidade_vacinacao_=float(velocidade_vacinacao)/9000000
+            percentual_infectados_=float(novos_infectados)/9000000
+
+        else:
+            populacao=pd.read_csv('populacao.csv')
+            populacao=populacao[populacao.nome.str.upper()==municipio.upper()]
+            total_populacao=int(populacao.iloc[0,:].populacao)
+            velocidade_vacinacao_=float(velocidade_vacinacao)/total_populacao
+            percentual_infectados_=float(novos_infectados)/total_populacao
+
+        df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao_)
+                          ,percentual_infectados=float(percentual_infectados_),
+                          day_interval=int(dias_novos_infectados)
+                          ,speed_factor=float(speed_factor),
+                          death_factor=float(death_factor),
+                          hospitalization_factor=float(hospitalization_factor),municipio=municipio)
+    
+    except Exception as e:
+        print(e)
+        df=pd.DataFrame()
+    
+    return df.to_json(orient="table")
 
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
