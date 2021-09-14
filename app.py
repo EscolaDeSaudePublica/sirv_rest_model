@@ -1,6 +1,6 @@
 
 from flask import Flask, render_template
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from altair import *
 from threading import Timer
 from timeloop import Timeloop
@@ -21,6 +21,7 @@ CORS(app)
 
 app.jinja_env.auto_reload = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 # Open the file and load the file
@@ -421,6 +422,7 @@ def json_model_data(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
 
 
 @app.route('/json_model_data_municipio/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:municipio>/')
+@cross_origin()
 def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor,municipio):
     
     try:
