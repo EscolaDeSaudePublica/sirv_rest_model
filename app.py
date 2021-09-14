@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template
+from flask import Flask, render_template,jsonify
 from flask_cors import CORS, cross_origin
 from altair import *
 from threading import Timer
@@ -450,7 +450,7 @@ def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_inf
         print(e)
         df=pd.DataFrame()
 
-    response = Flask.jsonify(df.to_json(orient="table"))
+    response = jsonify(df.to_json(orient="table"))
     response.headers.add('Access-Control-Allow-Origin', '*')
     
     return response
