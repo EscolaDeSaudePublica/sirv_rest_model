@@ -421,10 +421,11 @@ def json_model_data(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
     return df.to_json(orient="table")
 
 
-@app.route('/json_model_data_municipio/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/<string:municipio>/')
-@cross_origin(supports_credentials=True)
-def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,speed_factor,death_factor,hospitalization_factor,municipio):
+@app.route('/json_model_data_municipio/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:death_factor>/<string:hospitalization_factor>/<string:municipio>/')
+@cross_origin()
+def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_novos_infectados,death_factor,hospitalization_factor,municipio):
     
+    speed_factor=0.02
     try:
         if municipio=='Todos':
             print('Municipio igual a todos')
