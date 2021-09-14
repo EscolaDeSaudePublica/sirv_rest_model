@@ -14,8 +14,8 @@ COPY app.py /app
 COPY config.yml /app
 COPY dados.txt /app
 COPY dados_vacinacao.txt /app
-COPY *.txt /app
-COPY *.csv /app
+COPY *.txt /app/
+COPY *.csv /app/
 ADD templates /app/templates
 
 CMD  python app.py
