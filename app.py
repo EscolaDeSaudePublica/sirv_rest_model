@@ -448,8 +448,11 @@ def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_inf
     except Exception as e:
         print(e)
         df=pd.DataFrame()
+
+    response = flask.jsonify(df.to_json(orient="table"))
+    response.headers.add('Access-Control-Allow-Origin', '*')
     
-    return df.to_json(orient="table")
+    return response
 
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
