@@ -450,7 +450,7 @@ def json_model_data_por_municipio(eficacia_vacina,velocidade_vacinacao,novos_inf
         print(e)
         df=pd.DataFrame()
 
-    response = flask.jsonify(df.to_json(orient="table"))
+    response = Flask.jsonify(df.to_json(orient="table"))
     response.headers.add('Access-Control-Allow-Origin', '*')
     
     return response
