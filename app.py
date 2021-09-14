@@ -449,10 +449,10 @@ def model_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
         print(e)
         df=pd.DataFrame()
 
-    response = jsonify(df.to_json(orient="table"))
-    response.headers.add('Access-Control-Allow-Origin', '*')
+   
     
-    return response
+    
+    return  df.to_json(orient="table")
 
 
 @app.route('/<string:eficacia_vacina>/<string:velocidade_vacinacao>/<string:novos_infectados>/<string:dias_novos_infectados>/<string:speed_factor>/<string:death_factor>/<string:hospitalization_factor>/')
