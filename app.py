@@ -436,7 +436,7 @@ def model_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
             populacao=populacao[populacao.nome.str.upper()==municipio.upper()]
             total_populacao=int(populacao.iloc[0,:].populacao)
             velocidade_vacinacao_=float(velocidade_vacinacao)/total_populacao
-            percentual_infectados_=float(novos_infectados)/total_populacao
+            percentual_infectados_=float(novos_infectados)/9000000
 
         df,casos=SIRV_model(vaccine_eff=float(eficacia_vacina),vaccine_rate_1000=float(velocidade_vacinacao_)
                           ,percentual_infectados=float(percentual_infectados_),
