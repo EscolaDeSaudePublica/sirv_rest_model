@@ -152,7 +152,7 @@ tl.start()
 
 def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.50
                ,mortality_rate=1.9e-2,percentual_infectados=0.001,day_interval=30
-               ,speed_factor=0.02,death_factor=0.028,hospitalization_factor=0.1,municipio='Todos'):
+               ,speed_factor=0.02,death_factor=0.028,hospitalization_factor=0.1,municipio='Todos',populacao=9000000):
    
 
 
@@ -161,6 +161,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     
     if municipio=='Todos':
         casos=pd.read_json('dados.txt')
+      
+        
     else:
 
         nome_municipio = ''.join(ch for ch in unicodedata.normalize('NFKD', municipio) 
@@ -175,7 +177,7 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
         print(casos)
         print(now)
         casos=casos[casos.data_date<now]
-        
+        #casos=casos[casos.quantidade>0]
         print('casos')
         print(casos)
     
@@ -183,8 +185,8 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
     
     total_infectados=sum(casos.quantidade_nao_normalizada.values)
     
-    N=9000000-total_infectados
-    
+   
+    N=populacao-total_infectados
     casos.quantidade=casos.quantidade/N
     
 
@@ -196,12 +198,13 @@ def SIRV_model(vaccine_rate_1000=0.002,V0=0,N =6587940,I0 = 16089,vaccine_eff=0.
    
     
     print(casos[-5:]['data'].values[0])
-    data_inicial=casos[-5:]['data'].values[0]
+    data_inicial=casos[-15:]['data'].values[0]
     infectados=casos[-15:]['quantidade_nao_normalizada'].values[0]
     
     
-    
+    print(casos[-15:])
     I0=infectados
+    print('Infectados ',I0)
 
 
     
@@ -329,8 +332,16 @@ def casos_por_municipio(municipio):
             nome_municipio = nome_municipio.upper()
             casos=pd.read_json('dados_casos_'+nome_municipio.upper()+'.txt')
         print(casos)
+        casos['data_date']=pd.to_datetime(casos.data, format='%d/%m/%Y', errors='coerce')
+        now = pd.to_datetime("now")
+        print('casos get casos')
+        print(casos)
+        print(now)
+        casos=casos[casos.data_date<now]
+        casos=casos[:-15]
         return casos.to_json(orient="table")
-    except:
+    except Exception as ex:
+        print(ex)
         casos=pd.DataFrame()
         return casos.to_json(orient="table")
 
@@ -430,6 +441,7 @@ def model_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
             print('Municipio igual a todos')
             velocidade_vacinacao_=float(velocidade_vacinacao)/9000000
             percentual_infectados_=float(novos_infectados)/9000000
+            total_populacao=9000000
 
         else:
             populacao=pd.read_csv('populacao.csv')
@@ -443,7 +455,7 @@ def model_municipio(eficacia_vacina,velocidade_vacinacao,novos_infectados,dias_n
                           day_interval=int(dias_novos_infectados)
                           ,speed_factor=float(speed_factor),
                           death_factor=float(death_factor),
-                          hospitalization_factor=float(hospitalization_factor),municipio=municipio)
+                          hospitalization_factor=float(hospitalization_factor),municipio=municipio,populacao=float(total_populacao))
     
     except Exception as e:
         print(e)
